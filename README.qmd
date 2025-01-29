@@ -56,19 +56,32 @@ sim <- tibble(
 ### What is the probability that exposure = 1 given confounder = 1?
 
 ```{r}
-
+sim |>
+  count(exposure, confounder) |>
+  filter(confounder == 1) |>
+  mutate(prob_1_1 = n / sum(n))
 ```
 
 ### What is the probability that exposure = 0 given confounder = 1
 
 ```{r}
-
+sim |>
+  count(exposure, confounder) |>
+  filter(confounder == 1) |>
+  mutate(prob_1_1 = n / sum(n))
 ```
 
 ### What is the difference in the average outcome between exposure groups?
 
 ```{r}
+sim |>
+  group_by(exposure) |>
+  summarise(avg_outcome = mean(outcome)) |>
+  pivot_wider(names_from = exposure, values_from = avg_outcome) |>
+  mutate(diff = `1` - `0`)
 
+mean(sim[sim$exposure == 1, "outcome", drop = TRUE]) - 
+  mean(sim[sim$exposure == 0, "outcome", drop = TRUE])
 ```
 
 ## Exercise 2
@@ -76,7 +89,16 @@ sim <- tibble(
 ### Stratify by confounder and calculate the average difference between exposure group within each stratum
 
 ```{r}
-
+sim |>
+  group_by(confounder, exposure) |>
+  summarise(avg_outcome = mean(outcome), n = n()) |>
+  pivot_wider(names_from = exposure, values_from = avg_outcome:n) |>
+  mutate(diff = avg_outcome_1 - avg_outcome_0,
+         n = n_1 + n_0,
+         diff_n = diff * n) |>
+  select(confounder, diff_n) |>
+  pivot_wider(names_from = confounder, values_from = diff_n) |>
+  mutate(diff = (`0` + `1`) / 10000)
 ```
 
 How does the above compare to the “Truth” from the simulation?
